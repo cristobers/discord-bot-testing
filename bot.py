@@ -6,20 +6,17 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix = ']', intents=intents)
 
 with open("TOKEN.token", "r") as f:
-    token = f.readlines()
+    token = f.readlines()[0]
     
 @bot.tree.command(name="findfamiliar")
 @discord.app_commands.checks.has_permissions(administrator=True)
 async def findfamiliar(interaction: discord.Interaction, user: str = None, reason: str = None):
     if not interaction.user.guild_permissions.administrator:
         return await interaction.response.send_message("Nope!")
-
     if user is None:
         return await interaction.response.send_message("You didn't specify a user.")
     if reason is None:
        reason = "Kicked by findfamiliar command." 
-
-    print(reason)
 
     discordServerGuild = bot.get_guild(interaction.guild_id)
     similarUsers = []
@@ -45,11 +42,14 @@ async def findfamiliar(interaction: discord.Interaction, user: str = None, reaso
             button.emoji="🤯"
             button.disabled = True
             for user in similarUsers:
+                try:
+                    await user.kick(reason=str(reason))
+                except Exception:
+                    continue 
                 print(f"{user} has been kicked, reason:{reason}")
-                await user.kick(reason=str(reason))
             count = len(similarUsers)
             similarUsers.clear()
-            return await interaction.response.edit_message(content=f"{count} Users kicked", view=self)
+            return await interaction.response.edit_message(content=f"`{count}` Users kicked", view=self)
     view = buttonView()
     return await interaction.response.send_message(embed=embed, view=view)
 
@@ -58,4 +58,4 @@ async def on_ready():
     print("hello!")
     synced = await bot.tree.sync()
 
-bot.run(token[0])
+bot.run(token)
