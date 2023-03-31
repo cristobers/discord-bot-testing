@@ -1,9 +1,12 @@
-import discord, datetime 
+import discord, datetime, sys 
 from discord.ext import commands
 from discord.ui import Button, View
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix = ']', intents=intents)
+
+if sys.argv[1] == "DEBUG":
+    print("DEBUG MODE ENABLED, KICKING HAS BEEN DISABLED.")
 
 with open("TOKEN.token", "r") as f:
     token = f.readlines()[0]
@@ -38,18 +41,22 @@ async def findfamiliar(interaction: discord.Interaction, user: str = None, reaso
     class buttonView(View):
         @discord.ui.button(label="Kick listed users", style=discord.ButtonStyle.red, emoji="💥")
         async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+            log = ''
             button.label = "Users kicked."
             button.emoji="🤯"
             button.disabled = True
+            log += f"## Kicking log ##\nReason for kick: {reason}\n--------\n"
             for user in similarUsers:
                 try:
-                    await user.kick(reason=str(reason))
-                except Exception:
+                    if sys.argv[1] != "DEBUG":
+                        await user.kick(reason=str(reason))
+                    log += f"{user}\n"
+                except Exception as e:
+                    log += f"error kicking {user}, reason: {e}"
                     continue 
-                print(f"{user} has been kicked, reason:{reason}")
             count = len(similarUsers)
             similarUsers.clear()
-            return await interaction.response.edit_message(content=f"`{count}` Users kicked", view=self)
+            await interaction.response.edit_message(content=f"`{count}` Users kicked ```{log}```", view=self)
     view = buttonView()
     return await interaction.response.send_message(embed=embed, view=view)
 
