@@ -10,35 +10,48 @@ with open("TOKEN.token", "r") as f:
     
 @bot.tree.command(name="findfamiliar")
 @discord.app_commands.checks.has_permissions(administrator=True)
-async def findfamiliar(interaction: discord.Interaction, user: str = None):
+async def findfamiliar(interaction: discord.Interaction, user: str = None, reason: str = None):
     if not interaction.user.guild_permissions.administrator:
         return await interaction.response.send_message("Nope!")
-    similarUsers = []
+
     if user is None:
         return await interaction.response.send_message("You didn't specify a user.")
+    if reason is None:
+       reason = "Kicked by findfamiliar command." 
+
+    print(reason)
+
     discordServerGuild = bot.get_guild(interaction.guild_id)
+    similarUsers = []
+
     for member in discordServerGuild.members:
         if user.lower() in member.name.lower():
             similarUsers.append(member)
+        embed = discord.Embed(color=0xec0000)
 
-    embed = discord.Embed(title=f"Users with similar names to `{user}` found:", color=0xec0000)
-    embed.timestamp = datetime.datetime.now()
+    if len(similarUsers) != 0:
+        embed.title=f"Users with similar names to `{user}` found:"
+        embed.timestamp = datetime.datetime.now()
+    else:
+        embed.title=f"No users found"
+        return await interaction.response.send_message(embed=embed)
     for user in similarUsers:
         embed.add_field(name="", value=user.mention, inline=False)
     
-    button = Button(label="Kick listed users", style=discord.ButtonStyle.red, emoji="💥")
-
-    async def button_callback(interaction):
-        for user in similarUsers:
-            print(f"{user} has been kicked.")
-            await user.kick(reason=None)
-        await interaction.response.send_message("Users have been kicked.")
-
-    button.callback = button_callback
-
-    view = View()
-    view.add_item(button)
-    await interaction.response.send_message(embed=embed, view=view)
+    class buttonView(View):
+        @discord.ui.button(label="Kick listed users", style=discord.ButtonStyle.red, emoji="💥")
+        async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+            button.label = "Users kicked."
+            button.emoji="🤯"
+            button.disabled = True
+            for user in similarUsers:
+                print(f"{user} has been kicked, reason:{reason}")
+                await user.kick(reason=str(reason))
+            count = len(similarUsers)
+            similarUsers.clear()
+            return await interaction.response.edit_message(content=f"{count} Users kicked", view=self)
+    view = buttonView()
+    return await interaction.response.send_message(embed=embed, view=view)
 
 @bot.event
 async def on_ready():
