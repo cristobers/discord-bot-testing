@@ -1,12 +1,9 @@
-import discord, datetime, sys 
+import discord, datetime
 from discord.ext import commands
 from discord.ui import Button, View
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix = ']', intents=intents)
-
-if sys.argv[1] == "DEBUG":
-    print("DEBUG MODE ENABLED, KICKING HAS BEEN DISABLED.")
 
 with open("TOKEN.token", "r") as f:
     token = f.readlines()[0]
@@ -48,9 +45,8 @@ async def findfamiliar(interaction: discord.Interaction, user: str = None, reaso
             log += f"## Kicking log ##\nReason for kick: {reason}\n--------\n"
             for user in similarUsers:
                 try:
-                    if sys.argv[1] != "DEBUG":
-                        await user.kick(reason=str(reason))
                     log += f"{user}\n"
+                    await user.kick(reason=str(reason))
                 except Exception as e:
                     log += f"error kicking {user}, reason: {e}"
                     continue 
