@@ -38,6 +38,10 @@ async def findfamiliar(interaction: discord.Interaction, user: str = None, reaso
     class buttonView(View):
         @discord.ui.button(label="Kick listed users", style=discord.ButtonStyle.red, emoji="💥")
         async def button_callback(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+            if not interaction.user.guild_permissions.administrator:
+                return # dont click my buttons if you aint an admin!!!
+
             log = ''
             button.label = "Users kicked."
             button.emoji="🤯"
